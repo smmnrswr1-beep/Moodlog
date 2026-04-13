@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>MoodLog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    /* SAD — azul marino */
+    --sad:        #1e3a5f;
+    --sad-mid:    #2e5f8f;
+    --sad-light:  #d6eaf8;
+    --sad-xlight: #eaf4fb;
+
+    /* ANX — naranja/ámbar */
+    --anx:        #c05e00;
+    --anx-mid:    #e07020;
+    --anx-light:  #fde8cc;
+    --anx-xlight: #fff4e8;
+
+    --red:        #c0392b;
+    --red-light:  #fdecea;
+    --green:      #1a7a4a;
+    --green-light:#d5f0e3;
+    --amber:      #856404;
+    --amber-light:#fef3cd;
+    --orange:     #7b3a10;
+    --orange-light:#fde8d8;
+
+    --bg:         #f5f7fa;
+    --surface:    #ffffff;
+    --surface2:   #f0f3f7;
+    --border:     #dde3ec;
+    --border2:    #c8d3e0;
+    --text:       #0f1f35;
+    --text2:      #4a6080;
+    --text3:      #8fa3bb;
+
+    --sans:       'Inter', sans-serif;
+    --radius:     16px;
+    --radius-sm:  10px;
+    --radius-xs:  6px;
+    --shadow-sm:  0 1px 3px rgba(30,58,95,0.07);
+  }
+
+  html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: var(--sans); color: var(--text); font-size: 16px; -webkit-font-smoothing: antialiased; }
+  .app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 18px; flex-shrink: 0; box-shadow: var(--shadow-sm); }
+  .header-top { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 10px; }
+  .app-name-wrap { display: flex; align-items: center; gap: 10px; }
+  .app-icon { width: 32px; height: 32px; background: var(--sad); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .app-icon svg { width: 18px; height: 18px; }
+  .app-name { font-size: 17px; font-weight: 600; color: var(--sad); letter-spacing: -.01em; }
+  .app-name span { color: var(--anx-mid); font-weight: 400; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .today-pill { background: var(--sad-xlight); color: var(--sad-mid); font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--sad-light); }
+  .streak-pill { background: #fff8e1; color: #e65100; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: 1px solid #ffe082; display: none; align-items: center; gap: 4px; }
+  .streak-pill.show { display: flex; }
+
+  .tabs { display: flex; }
+  .tab { flex: 1; padding: 10px 0 11px; border: none; background: transparent; font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
+  .tab.active { color: var(--sad); border-bottom-color: var(--sad); }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 16px 32px; -webkit-overflow-scrolling: touch; }
+  .content::-webkit-scrollbar { display: none; }
+
+  /* ── CARD ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+  .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .card-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .card-icon.sad { background: var(--sad-xlight); }
+  .card-icon.anx { background: var(--anx-xlight); }
+  .card-icon svg { width: 14px; height: 14px; }
+  .card-title { font-size: 13px; font-weight: 600; }
+  .card-title.sad { color: var(--sad); }
+  .card-title.anx { color: var(--anx); }
+  .card-subtitle { font-size: 11px; color: var(--text3); margin-left: auto; }
+
+  /* ── READING ── */
+  .reading-row { display: flex; align-items: flex-end; gap: 6px; margin-bottom: 14px; }
+  .reading-number { font-size: 56px; font-weight: 300; line-height: 1; letter-spacing: -.02em; }
+  .reading-number.sad { color: var(--sad); }
+  .reading-number.anx { color: var(--anx); }
+  .reading-scale { font-size: 18px; color: var(--text3); font-weight: 300; padding-bottom: 8px; }
+  .reading-label { margin-left: auto; padding-bottom: 6px; }
+  .reading-severity { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .sev-ok  { background: var(--green-light);  color: var(--green); }
+  .sev-low { background: var(--amber-light);  color: var(--amber); }
+  .sev-mid { background: var(--orange-light); color: var(--orange); }
+  .sev-hi  { background: var(--red-light);    color: var(--red); }
+
+  /* ── SLIDER ── */
+  input[type=range] { width: 100%; -webkit-appearance: none; appearance: none; height: 5px; border-radius: 5px; outline: none; border: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 5px; border-radius: 5px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2.5px solid white; box-shadow: 0 1px 6px rgba(30,58,95,0.25); margin-top: -8.5px; transition: transform .1s; }
+  input[type=range]:active::-webkit-slider-thumb { transform: scale(1.15); }
+  #sad-slider { background: linear-gradient(to right, var(--sad-light), var(--sad)); }
+  #sad-slider::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--sad-light), var(--sad)); }
+  #sad-slider::-webkit-slider-thumb { background: var(--sad); }
+  #anx-slider { background: linear-gradient(to right, var(--anx-light), var(--anx)); }
+  #anx-slider::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--anx-light), var(--anx)); }
+  #anx-slider::-webkit-slider-thumb { background: var(--anx); }
+
+  .scale-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--text3); margin: 4px 0 10px; font-weight: 500; }
+  .hint-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 9px 12px; font-size: 12.5px; color: var(--text2); line-height: 1.55; min-height: 42px; margin-bottom: 12px; }
+
+  textarea { width: 100%; padding: 10px 12px; border-radius: var(--radius-xs); border: 1px solid var(--border); font-family: var(--sans); font-size: 13px; color: var(--text); background: var(--bg); resize: none; outline: none; line-height: 1.6; transition: border-color .15s, box-shadow .15s; }
+  textarea:focus { border-color: var(--sad); box-shadow: 0 0 0 3px rgba(30,58,95,0.08); }
+  #notes-anx:focus { border-color: var(--anx); box-shadow: 0 0 0 3px rgba(192,94,0,0.1); }
+  textarea::placeholder { color: var(--text3); }
+
+  .field-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+
+  /* ── TIME ── */
+  .time-toggle { display: flex; gap: 8px; margin-bottom: 10px; }
+  .time-btn { flex: 1; padding: 10px 8px; border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .time-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .time-btn.active { border-color: var(--sad); background: var(--sad-xlight); color: var(--sad); box-shadow: 0 0 0 3px rgba(30,58,95,0.06); }
+  #time-picker-wrap { display: none; }
+  #time-picker-wrap.show { display: block; }
+  input[type=time] { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 22px; font-family: var(--sans); font-weight: 300; color: var(--sad); background: var(--bg); outline: none; margin-top: 8px; text-align: center; }
+  input[type=time]:focus { border-color: var(--sad); box-shadow: 0 0 0 3px rgba(30,58,95,0.08); }
+
+  /* ── SAVE BTN ── */
+  .save-btn { width: 100%; padding: 15px; border: none; border-radius: var(--radius); font-family: var(--sans); font-size: 15px; font-weight: 600; cursor: pointer; background: var(--sad); color: white; transition: all .18s; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(30,58,95,0.3); }
+  .save-btn:active { transform: scale(.98); box-shadow: none; }
+  .save-btn.saved { background: var(--green); }
+
+  /* ── MONITOR ── */
+  .day-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .nav-btn { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; color: var(--text2); transition: all .15s; }
+  .nav-btn:active { background: var(--sad-xlight); border-color: var(--sad-light); color: var(--sad); }
+  .nav-btn:disabled { opacity: .3; cursor: default; }
+  .day-label-wrap { text-align: center; }
+  .day-label { font-size: 15px; font-weight: 600; color: var(--sad); display: block; }
+  .day-count { font-size: 11px; color: var(--text3); margin-top: 1px; display: block; }
+
+  .chart-wrap { position: relative; margin-bottom: 12px; }
+  canvas { width: 100% !important; display: block; }
+
+  .legend { display: flex; gap: 20px; justify-content: center; margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); font-weight: 500; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ── STATS ── */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; box-shadow: var(--shadow-sm); }
+  .stat-box-header { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .stat-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .stat-val { font-size: 28px; font-weight: 300; letter-spacing: -.01em; line-height: 1.1; }
+  .stat-val.sad { color: var(--sad); }
+  .stat-val.anx { color: var(--anx); }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* ── EXPORT BTN ── */
+  .export-btn { width: 100%; padding: 13px; border: 1.5px solid var(--border2); border-radius: var(--radius); font-family: var(--sans); font-size: 14px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--sad-mid); transition: all .18s; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow-sm); }
+  .export-btn:active { background: var(--sad-xlight); border-color: var(--sad-light); }
+  .export-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .export-btn.exporting { opacity: .6; pointer-events: none; }
+
+  /* ── TOOLTIP ── */
+  .tooltip { position: absolute; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 11px 13px; font-size: 12px; max-width: 215px; pointer-events: none; display: none; line-height: 1.5; z-index: 20; box-shadow: 0 4px 16px rgba(30,58,95,0.14); }
+  .tooltip.interactive { pointer-events: auto; }
+  .tt-time { font-size: 14px; font-weight: 600; color: var(--sad); margin-bottom: 7px; }
+  .tt-lbl { font-size: 12px; font-weight: 600; }
+  .tt-note { color: var(--text2); font-size: 11.5px; margin-top: 2px; font-style: italic; }
+  .tt-div { height: 1px; background: var(--border); margin: 6px 0; }
+  .tt-delete-btn { font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--red); background: var(--red-light); border: 1px solid rgba(192,57,43,0.15); border-radius: var(--radius-xs); padding: 5px 10px; cursor: pointer; margin-top: 8px; width: 100%; transition: all .15s; }
+  .tt-delete-btn:active { background: var(--red); color: white; }
+  .tt-confirm { display: none; margin-top: 8px; gap: 6px; }
+  .tt-confirm.show { display: flex; }
+  .tt-confirm-yes { flex: 1; padding: 6px; border: none; border-radius: var(--radius-xs); background: var(--red); color: white; font-family: var(--sans); font-size: 11px; font-weight: 600; cursor: pointer; }
+  .tt-confirm-no { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-xs); background: var(--bg); color: var(--text2); font-family: var(--sans); font-size: 11px; cursor: pointer; }
+
+  /* ── RECORDS ── */
+  .section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .record-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; border-left: 3px solid var(--sad); box-shadow: var(--shadow-sm); }
+  .record-card:last-child { margin-bottom: 0; }
+  .record-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .record-time { font-size: 13px; font-weight: 600; color: var(--sad); }
+  .record-delete-btn { font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--red); background: var(--red-light); border: 1px solid rgba(192,57,43,0.12); border-radius: var(--radius-xs); padding: 4px 10px; cursor: pointer; transition: all .15s; }
+  .record-delete-btn:active { background: var(--red); color: white; }
+  .record-confirm { display: none; gap: 6px; margin-bottom: 10px; }
+  .record-confirm.show { display: flex; }
+  .record-confirm-yes { flex: 1; padding: 8px; border: none; border-radius: var(--radius-xs); background: var(--red); color: white; font-family: var(--sans); font-size: 12px; font-weight: 600; cursor: pointer; }
+  .record-confirm-no { flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-xs); background: var(--bg); color: var(--text2); font-family: var(--sans); font-size: 12px; cursor: pointer; }
+  .record-emotion { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .record-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .badge-sad { background: var(--sad-xlight); color: var(--sad); border: 1px solid var(--sad-light); }
+  .badge-anx { background: var(--anx-xlight); color: var(--anx); border: 1px solid var(--anx-light); }
+  .record-note { font-size: 12px; color: var(--text2); line-height: 1.5; font-style: italic; padding-top: 1px; }
+
+  .empty { text-align: center; padding: 32px 20px; }
+  .empty p { font-size: 13px; color: var(--text3); line-height: 1.7; }
+
+  .history-scroll { max-height: 360px; overflow-y: auto; }
+  .history-scroll::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="app-name-wrap">
+        <div class="app-icon">
+          <svg viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12 L5 8 L8 10.5 L11 5.5 L14 7.5 L16 4.5"/>
+            <circle cx="5" cy="8" r="1.3" fill="white" stroke="none"/>
+            <circle cx="8" cy="10.5" r="1.3" fill="white" stroke="none"/>
+            <circle cx="11" cy="5.5" r="1.3" fill="white" stroke="none"/>
+            <circle cx="14" cy="7.5" r="1.3" fill="white" stroke="none"/>
+          </svg>
+        </div>
+        <div class="app-name">Mood<span>Log</span></div>
+      </div>
+      <div class="header-right">
+        <div class="streak-pill" id="streak-pill"></div>
+        <div class="today-pill" id="today-pill">—</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('register')">Registrar</button>
+      <button class="tab" onclick="switchTab('monitor')">Monitor</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ═══ REGISTRAR ═══ -->
+    <div id="tab-register">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon sad">
+            <svg viewBox="0 0 14 14" fill="none" stroke="#1e3a5f" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 9.5 Q7 8 9.5 9.5"/><circle cx="5" cy="5.5" r=".8" fill="#1e3a5f"/><circle cx="9" cy="5.5" r=".8" fill="#1e3a5f"/></svg>
+          </div>
+          <span class="card-title sad">Tristeza</span>
+          <span class="card-subtitle" id="sad-subtitle">Sin tristeza</span>
+        </div>
+        <div class="reading-row">
+          <span class="reading-number sad" id="sad-val">0</span>
+          <span class="reading-scale">/9</span>
+          <div class="reading-label"><span class="reading-severity sev-ok" id="sad-severity">Normal</span></div>
+        </div>
+        <input type="range" id="sad-slider" min="0" max="9" step="1" value="0" oninput="updateSad(this.value)">
+        <div class="scale-labels"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+        <div class="hint-box" id="sad-hint">Sin tristeza — energía normal, pensamientos fluyen con claridad.</div>
+        <div class="field-label">Observación</div>
+        <textarea id="notes-sad" rows="2" placeholder="¿Qué está pasando con tu estado de ánimo?"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon anx">
+            <svg viewBox="0 0 14 14" fill="none" stroke="#c05e00" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5 8.5 Q7 10.5 9 8.5"/><path d="M5 5 Q5.5 4 6 5"/><path d="M8 5 Q8.5 4 9 5"/></svg>
+          </div>
+          <span class="card-title anx">Ansiedad</span>
+          <span class="card-subtitle" id="anx-subtitle">Sin ansiedad</span>
+        </div>
+        <div class="reading-row">
+          <span class="reading-number anx" id="anx-val">0</span>
+          <span class="reading-scale">/9</span>
+          <div class="reading-label"><span class="reading-severity sev-ok" id="anx-severity">Normal</span></div>
+        </div>
+        <input type="range" id="anx-slider" min="0" max="9" step="1" value="0" oninput="updateAnx(this.value)">
+        <div class="scale-labels"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+        <div class="hint-box" id="anx-hint">Sin ansiedad — calma total, mente tranquila, sin incomodidad.</div>
+        <div class="field-label">Observación</div>
+        <textarea id="notes-anx" rows="2" placeholder="¿Qué está desencadenando tu ansiedad?"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Hora del registro</div>
+        <div class="time-toggle">
+          <button class="time-btn active" id="btn-now" onclick="setTimeMode('now')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l2.5 2.5"/></svg>
+            Ahora mismo
+          </button>
+          <button class="time-btn" id="btn-custom" onclick="setTimeMode('custom')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="2.5" width="13" height="12" rx="2"/><path d="M1.5 6.5h13M5 1.5v2M11 1.5v2"/></svg>
+            Elegir hora
+          </button>
+        </div>
+        <div id="time-picker-wrap"><input type="time" id="time-picker"></div>
+      </div>
+
+      <button class="save-btn" id="save-btn" onclick="saveRecord()">Guardar registro</button>
+    </div>
+
+    <!-- ═══ MONITOR ═══ -->
+    <div id="tab-monitor" style="display:none">
+      <div class="card">
+        <div class="day-nav">
+          <button class="nav-btn" id="prev-day" onclick="changeDay(-1)">&#8249;</button>
+          <div class="day-label-wrap">
+            <span class="day-label" id="chart-day-label">Hoy</span>
+            <span class="day-count" id="chart-day-count"></span>
+          </div>
+          <button class="nav-btn" id="next-day" onclick="changeDay(1)" disabled>&#8250;</button>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart"></canvas>
+          <div class="tooltip" id="tooltip">
+            <div class="tt-time" id="tt-time"></div>
+            <div id="tt-body"></div>
+            <button class="tt-delete-btn" id="tt-delete-btn" onclick="showTooltipConfirm()">Eliminar registro</button>
+            <div class="tt-confirm" id="tt-confirm">
+              <button class="tt-confirm-yes" onclick="confirmDeleteFromChart()">Sí, eliminar</button>
+              <button class="tt-confirm-no" onclick="cancelTooltipConfirm()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#1e3a5f"></div>Tristeza</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#c05e00"></div>Ansiedad</div>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <button class="export-btn" id="export-btn" onclick="exportPNG()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v8M5 7l3 3 3-3"/><rect x="2" y="11" width="12" height="3" rx="1"/>
+        </svg>
+        Exportar como imagen
+      </button>
+
+      <div id="records-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SAD_HINTS=[
+  "Sin tristeza — energía normal, pensamientos fluyen con claridad.",
+  "Muy leve — energía casi normal, algo de desgano apenas perceptible.",
+  "Leve — algo de desgano, pensamientos un poco más lentos o grises.",
+  "Moderada-baja — desmotivación presente, cuesta arrancar con las cosas.",
+  "Moderada — energía claramente baja, pensamientos pesimistas aparecen.",
+  "Media — poca energía, pensamientos negativos persistentes, el día cuesta más.",
+  "Significativa — muy poca energía, apatía notable, pensamientos difíciles de callar.",
+  "Intensa — sin ganas de casi nada, la mente da vueltas sola.",
+  "Muy intensa — agotamiento emocional, pensamientos muy negativos, difícil funcionar.",
+  "Máxima — sin energía ni motivación para nada, pensamientos abrumadores."
+];
+const ANX_HINTS=[
+  "Sin ansiedad — calma total, mente tranquila, sin incomodidad.",
+  "Muy leve — algo de incomodidad apenas perceptible, sin síntomas físicos.",
+  "Leve — incomodidad de fondo presente, sin síntomas físicos todavía.",
+  "Moderada-baja — inquietud mental presente, mente algo acelerada.",
+  "Moderada — inquietud más clara, algo de tensión física empezando.",
+  "Media — mente difícil de callar, tensión física presente.",
+  "Significativa — inquietud intensa, tensión en hombros o cuello.",
+  "Intensa — mente muy acelerada, síntomas físicos notables.",
+  "Muy intensa — muy difícil calmar la mente, cuerpo tenso y agitado.",
+  "Máxima — inquietud abrumadora, síntomas físicos intensos."
+];
+const SEV_LABELS=["Normal","Normal","Leve","Leve","Moderado","Moderado","Significativo","Intenso","Muy intenso","Máximo"];
+const SEV_CLASS =["sev-ok","sev-ok","sev-low","sev-low","sev-low","sev-mid","sev-mid","sev-hi","sev-hi","sev-hi"];
+const DAYS_ES   =['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const DAYS_SHORT=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MONTHS_ES =['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+const SAD_COLOR='#1e3a5f', ANX_COLOR='#c05e00';
+const SAD_AREA='rgba(30,58,95,0.08)', ANX_AREA='rgba(192,94,0,0.08)';
+
+let timeMode='now', chartDayOffset=0, activeTooltipTs=null;
+
+(function(){
+  const n=new Date();
+  const d=DAYS_ES[n.getDay()];
+  document.getElementById('today-pill').textContent=
+    `${d.charAt(0).toUpperCase()+d.slice(1)} ${n.getDate()} ${MONTHS_ES[n.getMonth()]}`;
+  updateStreak();
+})();
+
+function updateStreak(){
+  const data=getAllData(); let streak=0;
+  const d=new Date();
+  if (!data[mkKey(d)]||!data[mkKey(d)].length) d.setDate(d.getDate()-1);
+  while(true){ const k=mkKey(d); if(data[k]&&data[k].length){streak++;d.setDate(d.getDate()-1);}else break; }
+  const pill=document.getElementById('streak-pill');
+  if(streak>=2){pill.innerHTML=`🔥 ${streak} días`;pill.classList.add('show');}
+  else pill.classList.remove('show');
+}
+
+function updateSad(v){
+  const i=parseInt(v);
+  document.getElementById('sad-val').textContent=v;
+  document.getElementById('sad-hint').textContent=SAD_HINTS[i];
+  document.getElementById('sad-subtitle').textContent=SAD_HINTS[i].split('—')[0].trim();
+  const s=document.getElementById('sad-severity');
+  s.textContent=SEV_LABELS[i]; s.className='reading-severity '+SEV_CLASS[i];
+}
+function updateAnx(v){
+  const i=parseInt(v);
+  document.getElementById('anx-val').textContent=v;
+  document.getElementById('anx-hint').textContent=ANX_HINTS[i];
+  document.getElementById('anx-subtitle').textContent=ANX_HINTS[i].split('—')[0].trim();
+  const s=document.getElementById('anx-severity');
+  s.textContent=SEV_LABELS[i]; s.className='reading-severity '+SEV_CLASS[i];
+}
+
+function setTimeMode(mode){
+  timeMode=mode;
+  document.getElementById('btn-now').className='time-btn'+(mode==='now'?' active':'');
+  document.getElementById('btn-custom').className='time-btn'+(mode==='custom'?' active':'');
+  const wrap=document.getElementById('time-picker-wrap');
+  if(mode==='custom'){wrap.classList.add('show');const n=new Date();document.getElementById('time-picker').value=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
+  else wrap.classList.remove('show');
+}
+function getTimeStr(){
+  if(timeMode==='now'){const n=new Date();return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
+  return document.getElementById('time-picker').value||'00:00';
+}
+
+function mkKey(d){return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;}
+function dayKey(o){const d=new Date();d.setDate(d.getDate()+(o||0));return mkKey(d);}
+function dateFromOffset(o){const d=new Date();d.setDate(d.getDate()+o);return d;}
+function getAllData(){return JSON.parse(localStorage.getItem('moodlog')||'{}');}
+function saveData(d){localStorage.setItem('moodlog',JSON.stringify(d));}
+function deleteRecord(ts,key){
+  const data=getAllData(); if(!data[key])return;
+  data[key]=data[key].filter(r=>r.ts!==ts);
+  if(!data[key].length)delete data[key]; saveData(data);
+}
+
+function saveRecord(){
+  const sad=parseInt(document.getElementById('sad-slider').value);
+  const anx=parseInt(document.getElementById('anx-slider').value);
+  const time=getTimeStr();
+  const notesSad=document.getElementById('notes-sad').value.trim();
+  const notesAnx=document.getElementById('notes-anx').value.trim();
+  const key=dayKey(0); const data=getAllData();
+  if(!data[key])data[key]=[];
+  data[key].push({sad,anx,time,notesSad,notesAnx,ts:Date.now()});
+  data[key].sort((a,b)=>a.time.localeCompare(b.time));
+  saveData(data);
+  document.getElementById('notes-sad').value='';
+  document.getElementById('notes-anx').value='';
+  document.getElementById('sad-slider').value=0;updateSad(0);
+  document.getElementById('anx-slider').value=0;updateAnx(0);
+  updateStreak();
+  const btn=document.getElementById('save-btn');
+  btn.textContent='Registro guardado ✓';btn.classList.add('saved');
+  setTimeout(()=>{btn.textContent='Guardar registro';btn.classList.remove('saved');},1600);
+}
+
+function switchTab(tab){
+  ['register','monitor'].forEach((t,i)=>{
+    document.querySelectorAll('.tab')[i].classList.toggle('active',t===tab);
+    document.getElementById(`tab-${t}`).style.display=t===tab?'block':'none';
+  });
+  if(tab==='monitor'){chartDayOffset=0;renderMonitor();}
+}
+
+function changeDay(dir){
+  chartDayOffset+=dir; if(chartDayOffset>0)chartDayOffset=0;
+  document.getElementById('next-day').disabled=chartDayOffset>=0;
+  hideTooltip(); renderMonitor();
+}
+
+function renderMonitor(){
+  const key=dayKey(chartDayOffset);
+  const records=getAllData()[key]||[];
+  const date=dateFromOffset(chartDayOffset);
+  document.getElementById('next-day').disabled=chartDayOffset>=0;
+  let label=chartDayOffset===0?'Hoy':chartDayOffset===-1?'Ayer'
+    :`${DAYS_SHORT[date.getDay()]} ${date.getDate()} ${MONTHS_ES[date.getMonth()]}`;
+  document.getElementById('chart-day-label').textContent=label;
+  document.getElementById('chart-day-count').textContent=
+    records.length===0?'Sin registros':records.length===1?'1 registro':`${records.length} registros`;
+  drawChart(records,key);
+  renderStats(records);
+  renderRecords(records,key);
+}
+
+function drawChart(records,key){
+  const canvas=document.getElementById('chart');
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.offsetWidth-2, H=210;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
+
+  const pad={l:28,r:12,t:14,b:34};
+  const gw=W-pad.l-pad.r,gh=H-pad.t-pad.b;
+  const gridC='rgba(30,58,95,0.06)',textC='rgba(74,96,128,0.7)',font='9px Inter,sans-serif';
+
+  for(let i=0;i<=9;i+=3){
+    const y=pad.t+gh-gh*i/9;
+    ctx.strokeStyle=gridC;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+gw,y);ctx.stroke();
+    ctx.fillStyle=textC;ctx.font=font;ctx.textAlign='right';ctx.fillText(i,pad.l-4,y+3.5);
+  }
+  [0,6,9,12,15,18,21,24].forEach(h=>{
+    const x=pad.l+gw*(h/24);
+    ctx.strokeStyle=gridC;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+gh);ctx.stroke();
+    if(h>0&&h<24){ctx.fillStyle=textC;ctx.font=font;ctx.textAlign='center';ctx.fillText(h+'h',x,H-8);}
+  });
+  ctx.strokeStyle='rgba(30,58,95,0.12)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gh);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t+gh);ctx.lineTo(pad.l+gw,pad.t+gh);ctx.stroke();
+
+  const tX=t=>{const[h,m]=t.split(':').map(Number);return pad.l+gw*((h*60+m)/1440);};
+  const vY=v=>pad.t+gh-gh*(v/9);
+
+  window._chartRecords=records;window._chartDayKey=key;
+  window._chartMeta={pad,gw,gh,W,H,timeToX:tX,valToY:vY};
+
+  if(!records.length){
+    ctx.fillStyle='rgba(74,96,128,0.35)';ctx.font='12px Inter,sans-serif';ctx.textAlign='center';
+    ctx.fillText('Sin registros para este día',W/2,H/2-8);
+    ctx.fillStyle='rgba(74,96,128,0.22)';ctx.font='11px Inter,sans-serif';
+    ctx.fillText('Ve a Registrar para añadir uno',W/2,H/2+10);
+    return;
+  }
+
+  function area(k,color){
+    if(records.length<2)return;
+    ctx.beginPath();
+    records.forEach((r,i)=>i===0?ctx.moveTo(tX(r.time),vY(r[k])):ctx.lineTo(tX(r.time),vY(r[k])));
+    ctx.lineTo(tX(records[records.length-1].time),pad.t+gh);
+    ctx.lineTo(tX(records[0].time),pad.t+gh);
+    ctx.closePath();ctx.fillStyle=color;ctx.fill();
+  }
+  area('sad',SAD_AREA); area('anx',ANX_AREA);
+
+  function line(k,color){
+    if(records.length<2)return;
+    ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();
+    records.forEach((r,i)=>i===0?ctx.moveTo(tX(r.time),vY(r[k])):ctx.lineTo(tX(r.time),vY(r[k])));
+    ctx.stroke();
+  }
+  line('sad',SAD_COLOR); line('anx',ANX_COLOR);
+
+  function dots(k,color){
+    records.forEach(r=>{
+      ctx.beginPath();ctx.arc(tX(r.time),vY(r[k]),5.5,0,Math.PI*2);
+      ctx.fillStyle='white';ctx.fill();
+      ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.stroke();
+    });
+  }
+  dots('sad',SAD_COLOR); dots('anx',ANX_COLOR);
+
+  if(chartDayOffset===0){
+    const n=new Date();
+    const nx=pad.l+gw*((n.getHours()*60+n.getMinutes())/1440);
+    ctx.strokeStyle='rgba(30,58,95,0.18)';ctx.lineWidth=1;ctx.setLineDash([3,5]);
+    ctx.beginPath();ctx.moveTo(nx,pad.t);ctx.lineTo(nx,pad.t+gh);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function renderStats(records){
+  const el=document.getElementById('stats-grid');
+  if(!records.length){el.innerHTML='';return;}
+  const avgSad=(records.reduce((s,r)=>s+r.sad,0)/records.length).toFixed(1);
+  const avgAnx=(records.reduce((s,r)=>s+r.anx,0)/records.length).toFixed(1);
+  const maxSad=Math.max(...records.map(r=>r.sad));
+  const maxAnx=Math.max(...records.map(r=>r.anx));
+  el.innerHTML=`
+    <div class="stat-box">
+      <div class="stat-box-header"><div class="stat-dot" style="background:${SAD_COLOR}"></div>Tristeza</div>
+      <div class="stat-val sad">${avgSad}</div>
+      <div class="stat-sub">promedio · máx. ${maxSad}</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-header"><div class="stat-dot" style="background:${ANX_COLOR}"></div>Ansiedad</div>
+      <div class="stat-val anx">${avgAnx}</div>
+      <div class="stat-sub">promedio · máx. ${maxAnx}</div>
+    </div>`;
+}
+
+function renderRecords(records,key){
+  const wrap=document.getElementById('records-wrap');
+  if(!records.length){wrap.innerHTML='';return;}
+  wrap.innerHTML=`
+    <div class="section-label">Registros del día</div>
+    <div class="history-scroll">
+      ${records.slice().reverse().map(r=>{
+        const sNote=r.notesSad||r.notes||'',aNote=r.notesAnx||'';
+        return `
+        <div class="record-card" id="rc-${r.ts}">
+          <div class="record-header">
+            <div class="record-time">${r.time}</div>
+            <button class="record-delete-btn" onclick="askDeleteRecord(${r.ts},'${key}')">Eliminar</button>
+          </div>
+          <div class="record-confirm" id="rconf-${r.ts}">
+            <button class="record-confirm-yes" onclick="confirmDeleteRecord(${r.ts},'${key}')">Sí, eliminar</button>
+            <button class="record-confirm-no" onclick="cancelDeleteRecord(${r.ts})">Cancelar</button>
+          </div>
+          <div class="record-emotion">
+            <span class="record-badge badge-sad">Tristeza ${r.sad}</span>
+            ${sNote?`<div class="record-note">${sNote}</div>`:''}
+          </div>
+          <div class="record-emotion">
+            <span class="record-badge badge-anx">Ansiedad ${r.anx}</span>
+            ${aNote?`<div class="record-note">${aNote}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function askDeleteRecord(ts,key){document.getElementById(`rconf-${ts}`).classList.add('show');}
+function cancelDeleteRecord(ts){document.getElementById(`rconf-${ts}`).classList.remove('show');}
+function confirmDeleteRecord(ts,key){deleteRecord(ts,key);renderMonitor();}
+
+function hideTooltip(){
+  const tip=document.getElementById('tooltip');
+  tip.style.display='none';tip.classList.remove('interactive');
+  document.getElementById('tt-confirm').classList.remove('show');
+  document.getElementById('tt-delete-btn').style.display='block';
+  activeTooltipTs=null;
+}
+function showTooltipConfirm(){
+  document.getElementById('tt-confirm').classList.add('show');
+  document.getElementById('tt-delete-btn').style.display='none';
+}
+function cancelTooltipConfirm(){
+  document.getElementById('tt-confirm').classList.remove('show');
+  document.getElementById('tt-delete-btn').style.display='block';
+}
+function confirmDeleteFromChart(){
+  if(!activeTooltipTs||!window._chartDayKey)return;
+  deleteRecord(activeTooltipTs,window._chartDayKey);
+  hideTooltip();renderMonitor();
+}
+
+function handleChartClick(e){
+  const canvas=document.getElementById('chart');
+  const rect=canvas.getBoundingClientRect();
+  const src=e.changedTouches?e.changedTouches[0]:e;
+  const mx=src.clientX-rect.left,my=src.clientY-rect.top;
+  const records=window._chartRecords||[],meta=window._chartMeta;
+  const tip=document.getElementById('tooltip');
+  if(!meta||!records.length){hideTooltip();return;}
+  const{timeToX,valToY,W}=meta;
+  let best=null,bestDist=28;
+  records.forEach(r=>{
+    ['sad','anx'].forEach(k=>{
+      const dx=timeToX(r.time)-mx,dy=valToY(r[k])-my;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<bestDist){bestDist=d;best={r,k};}
+    });
+  });
+  if(best){
+    const r=best.r;activeTooltipTs=r.ts;
+    const sNote=r.notesSad||r.notes||'',aNote=r.notesAnx||'';
+    document.getElementById('tt-time').textContent=r.time;
+    document.getElementById('tt-body').innerHTML=`
+      <div style="margin-bottom:3px">
+        <div class="tt-lbl" style="color:${SAD_COLOR}">Tristeza ${r.sad}</div>
+        ${sNote?`<div class="tt-note">${sNote}</div>`:''}
+      </div>
+      <div class="tt-div"></div>
+      <div>
+        <div class="tt-lbl" style="color:${ANX_COLOR}">Ansiedad ${r.anx}</div>
+        ${aNote?`<div class="tt-note">${aNote}</div>`:''}
+      </div>`;
+    document.getElementById('tt-delete-btn').style.display='block';
+    document.getElementById('tt-confirm').classList.remove('show');
+    tip.classList.add('interactive');
+    let lx=timeToX(r.time)+14,ty=Math.min(valToY(r.sad),valToY(r.anx))-10;
+    if(lx+220>W)lx=timeToX(r.time)-228;
+    tip.style.left=lx+'px';tip.style.top=Math.max(0,ty)+'px';tip.style.display='block';
+    if(e.stopPropagation)e.stopPropagation();
+  } else hideTooltip();
+}
+
+document.getElementById('chart').addEventListener('click',handleChartClick);
+document.getElementById('chart').addEventListener('touchend',function(e){handleChartClick(e);e.preventDefault();},{passive:false});
+document.getElementById('tab-monitor').addEventListener('click',function(e){
+  const tip=document.getElementById('tooltip');
+  if(!tip.contains(e.target)&&e.target!==document.getElementById('chart'))hideTooltip();
+});
+
+/* ── EXPORT PNG ── */
+function exportPNG(){
+  const btn=document.getElementById('export-btn');
+  btn.classList.add('exporting');btn.textContent='Generando imagen...';
+
+  const key=dayKey(chartDayOffset);
+  const records=getAllData()[key]||[];
+  const date=dateFromOffset(chartDayOffset);
+  const dayLabel=chartDayOffset===0?'Hoy':chartDayOffset===-1?'Ayer'
+    :`${DAYS_SHORT[date.getDay()]} ${date.getDate()} ${MONTHS_ES[date.getMonth()]}`;
+
+  const W=640,H=480,dpr=2;
+  const oc=document.createElement('canvas');
+  oc.width=W*dpr;oc.height=H*dpr;
+  const ctx=oc.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#1e3a5f';ctx.fillRect(0,0,W,64);
+
+  ctx.fillStyle='white';ctx.font='600 20px Inter,sans-serif';ctx.textAlign='left';
+  ctx.fillText('MoodLog',24,38);
+  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='300 20px Inter,sans-serif';
+  ctx.fillText('  — Registro emocional',24+ctx.measureText('MoodLog').width,38);
+
+  ctx.fillStyle='rgba(255,255,255,0.65)';ctx.font='12px Inter,sans-serif';ctx.textAlign='right';
+  const dateStr=`${DAYS_ES[date.getDay()].charAt(0).toUpperCase()+DAYS_ES[date.getDay()].slice(1)} ${date.getDate()} ${MONTHS_ES[date.getMonth()]} · ${dayLabel}`;
+  ctx.fillText(dateStr,W-24,38);
+
+  if(records.length){
+    const avgSad=(records.reduce((s,r)=>s+r.sad,0)/records.length).toFixed(1);
+    const avgAnx=(records.reduce((s,r)=>s+r.anx,0)/records.length).toFixed(1);
+    const maxSad=Math.max(...records.map(r=>r.sad));
+    const maxAnx=Math.max(...records.map(r=>r.anx));
+    const stats=[
+      {label:'Tristeza prom.',val:avgSad,color:SAD_COLOR},
+      {label:'Tristeza máx.',val:maxSad,color:SAD_COLOR},
+      {label:'Ansiedad prom.',val:avgAnx,color:ANX_COLOR},
+      {label:'Ansiedad máx.',val:maxAnx,color:ANX_COLOR},
+    ];
+    const bw=136,bh=66,gap=14,startX=(W-(bw*4+gap*3))/2,sy=76;
+    stats.forEach((s,i)=>{
+      const bx=startX+i*(bw+gap);
+      ctx.fillStyle='#f5f7fa';roundRect(ctx,bx,sy,bw,bh,8);ctx.fill();
+      ctx.strokeStyle='#dde3ec';ctx.lineWidth=1;roundRect(ctx,bx,sy,bw,bh,8);ctx.stroke();
+      ctx.fillStyle=s.color;ctx.font='600 26px Inter,sans-serif';ctx.textAlign='center';
+      ctx.fillText(s.val,bx+bw/2,sy+40);
+      ctx.fillStyle='#8fa3bb';ctx.font='10px Inter,sans-serif';
+      ctx.fillText(s.label.toUpperCase(),bx+bw/2,sy+56);
+    });
+  }
+
+  const pad={l:44,r:20,t:162,b:52};
+  const gw=W-pad.l-pad.r,gh=H-pad.t-pad.b;
+  const gridC='rgba(30,58,95,0.06)',textC='rgba(74,96,128,0.65)',cfont='10px Inter,sans-serif';
+
+  for(let i=0;i<=9;i+=3){
+    const y=pad.t+gh-gh*i/9;
+    ctx.strokeStyle=gridC;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+gw,y);ctx.stroke();
+    ctx.fillStyle=textC;ctx.font=cfont;ctx.textAlign='right';ctx.fillText(i,pad.l-6,y+3.5);
+  }
+  [0,6,9,12,15,18,21,24].forEach(h=>{
+    const x=pad.l+gw*(h/24);
+    ctx.strokeStyle=gridC;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+gh);ctx.stroke();
+    if(h>0&&h<24){ctx.fillStyle=textC;ctx.font=cfont;ctx.textAlign='center';ctx.fillText(h+'h',x,H-14);}
+  });
+  ctx.strokeStyle='rgba(30,58,95,0.15)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+gh);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t+gh);ctx.lineTo(pad.l+gw,pad.t+gh);ctx.stroke();
+
+  if(records.length){
+    const tX=t=>{const[h,m]=t.split(':').map(Number);return pad.l+gw*((h*60+m)/1440);};
+    const vY=v=>pad.t+gh-gh*(v/9);
+    function exArea(k,color){
+      if(records.length<2)return;
+      ctx.beginPath();
+      records.forEach((r,i)=>i===0?ctx.moveTo(tX(r.time),vY(r[k])):ctx.lineTo(tX(r.time),vY(r[k])));
+      ctx.lineTo(tX(records[records.length-1].time),pad.t+gh);
+      ctx.lineTo(tX(records[0].time),pad.t+gh);
+      ctx.closePath();ctx.fillStyle=color;ctx.fill();
+    }
+    exArea('sad',SAD_AREA);exArea('anx',ANX_AREA);
+    function exLine(k,color){
+      if(records.length<2)return;
+      ctx.strokeStyle=color;ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.beginPath();
+      records.forEach((r,i)=>i===0?ctx.moveTo(tX(r.time),vY(r[k])):ctx.lineTo(tX(r.time),vY(r[k])));
+      ctx.stroke();
+    }
+    exLine('sad',SAD_COLOR);exLine('anx',ANX_COLOR);
+    function exDots(k,color){
+      records.forEach(r=>{
+        ctx.beginPath();ctx.arc(tX(r.time),vY(r[k]),6,0,Math.PI*2);
+        ctx.fillStyle='white';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
+      });
+    }
+    exDots('sad',SAD_COLOR);exDots('anx',ANX_COLOR);
+  } else {
+    ctx.fillStyle='rgba(74,96,128,0.3)';ctx.font='14px Inter,sans-serif';ctx.textAlign='center';
+    ctx.fillText('Sin registros para este día',W/2,pad.t+gh/2);
+  }
+
+  [[SAD_COLOR,'Tristeza'],[ANX_COLOR,'Ansiedad']].forEach(([color,label],i)=>{
+    const lx=W/2-70+i*120;
+    ctx.beginPath();ctx.arc(lx,H-10,5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+    ctx.fillStyle='#4a6080';ctx.font='11px Inter,sans-serif';ctx.textAlign='left';
+    ctx.fillText(label,lx+10,H-6);
+  });
+
+  ctx.fillStyle='rgba(143,163,187,0.5)';ctx.font='10px Inter,sans-serif';ctx.textAlign='right';
+  ctx.fillText('Generado con MoodLog',W-24,H-6);
+
+  const link=document.createElement('a');
+  link.download=`moodlog-${dayLabel.toLowerCase().replace(/\s/g,'-')}.png`;
+  link.href=oc.toDataURL('image/png');link.click();
+
+  btn.classList.remove('exporting');
+  btn.innerHTML=`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 7l3 3 3-3"/><rect x="2" y="11" width="12" height="3" rx="1"/></svg> Exportar como imagen`;
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+window.addEventListener('resize',()=>{
+  if(document.getElementById('tab-monitor').style.display!=='none')renderMonitor();
+});
+</script>
+</body>
+</html>
